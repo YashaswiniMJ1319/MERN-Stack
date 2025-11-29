@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # 1. MongoDB Service
+  # 1. Database Service (MongoDB)
   mongo:
     image: mongo:6.0
     container_name: attendance_db
@@ -10,11 +10,9 @@ services:
     volumes:
       - mongo_data:/data/db
 
-  # 2. Backend API
+  # 2. Backend API Service
   api:
-    build:
-      context: ../api              # Go up 2 levels to find 'api' folder
-      dockerfile: ../infra/docker/api.Dockerfile # Path to Dockerfile
+    build: ./api
     container_name: attendance_api
     ports:
       - "5000:5000"
@@ -25,34 +23,30 @@ services:
     depends_on:
       - mongo
     volumes:
-      - ../api:/app                # Update volume path to match context
+      - ./api:/app
       - /app/node_modules
     command: npm run dev
 
-  # 3. Employee Frontend
+  # 3. Employee Frontend Service
   employee-app:
-    build:
-      context: ../frontendEmployee # Go up 2 levels to find 'frontendEmployee'
-      dockerfile: ../infra/docker/frontend.Dockerfile
+    build: ./employee
     container_name: attendance_employee
     ports:
       - "3000:5173"
     volumes:
-      - ../frontendEmployee:/app   # Update volume path to match context
+      - ./employee:/app
       - /app/node_modules
     stdin_open: true
     tty: true
 
-  # 4. Manager Frontend
+  # 4. Manager Frontend Service
   manager-app:
-    build:
-      context: ../frontendManager  # Go up 2 levels to find 'frontendManager'
-      dockerfile: ../infra/docker/frontend.Dockerfile
+    build: ./manager
     container_name: attendance_manager
     ports:
       - "3001:5173"
     volumes:
-      - ../frontendManager:/app    # Update volume path to match context
+      - ./manager:/app
       - /app/node_modules
     stdin_open: true
     tty: true
