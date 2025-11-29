@@ -1,7 +1,4 @@
-version: '3.8'
-
 services:
-  # 1. Database Service (MongoDB)
   mongo:
     image: mongo:6.0
     container_name: attendance_db
@@ -10,46 +7,44 @@ services:
     volumes:
       - mongo_data:/data/db
 
-  # 2. Backend API Service
   api:
-    build: ./api
+    build:
+      context: ../api
+      dockerfile: ../infra/docker/api.Dockerfile
     container_name: attendance_api
     ports:
       - "5000:5000"
     environment:
       - MONGO_URI=mongodb://mongo:27017/attendance_db
       - PORT=5000
-      - JWT_SECRET=supersecretkey
     depends_on:
       - mongo
     volumes:
-      - ./api:/app
+      - ../api:/app
       - /app/node_modules
     command: npm run dev
 
-  # 3. Employee Frontend Service
   employee-app:
-    build: ./employee
+    build:
+      context: ../frontendEmployee
+      dockerfile: ../infra/docker/frontendEmployee.Dockerfile
     container_name: attendance_employee
     ports:
-      - "3000:5173"
+      - "5173:5173"
     volumes:
-      - ./employee:/app
+      - ../frontendEmployee:/app
       - /app/node_modules
-    stdin_open: true
-    tty: true
 
-  # 4. Manager Frontend Service
   manager-app:
-    build: ./manager
+    build:
+      context: ../frontendManager
+      dockerfile: ../infra/docker/frontendManager.Dockerfile
     container_name: attendance_manager
     ports:
-      - "3001:5173"
+      - "5174:5174"
     volumes:
-      - ./manager:/app
+      - ../frontendManager:/app
       - /app/node_modules
-    stdin_open: true
-    tty: true
 
 volumes:
   mongo_data:
