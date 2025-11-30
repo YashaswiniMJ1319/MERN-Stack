@@ -1,13 +1,18 @@
 import express from "express";
-import { connectDB } from "./config/db.js";
 import cors from "cors";
+import authRoutes from "./routes/authRoutes.js";
+import attendanceRoutes from "./routes/attendanceRoutes.js";
+import leaveRoutes from "./routes/leaveRoutes.js";
 import dotenv from "dotenv";
 
 dotenv.config();
-connectDB();
-
 const app = express();
-app.use(cors());
-app.use(express.json());
 
-app.listen(5000, () => console.log("Server running on port 5000"));
+app.use(express.json());
+app.use(cors({ origin: "*", credentials: true }));
+
+app.use("/api/auth", authRoutes);
+app.use("/api/attendance", attendanceRoutes);
+app.use("/api/leave", leaveRoutes);
+
+app.listen(5000, () => console.log("🚀 Backend running on port 5000"));

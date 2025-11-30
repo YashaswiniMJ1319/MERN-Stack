@@ -1,15 +1,17 @@
-import mongoose from "mongoose";
+import admin from "firebase-admin";
+import { readFileSync } from "fs";
 
-export const connectDB = async () => {
-  try {
-    const conn = await mongoose.connect(process.env.MONGO_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+let db;
 
-    console.log(`MongoDB connected: ${conn.connection.host}`);
-  } catch (error) {
-    console.error(`Error: ${error.message}`);
-    process.exit(1);
-  }
-};
+// Initialize Firebase only once
+if (!admin.apps.length) {
+  const serviceAccount = JSON.parse(readFileSync("serviceAccountKey.json", "utf8"));
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  });
+}
+
+db = admin.firestore();
+console.log("🔥 Firebase Firestore Connected Successfully");
+
+export { db };

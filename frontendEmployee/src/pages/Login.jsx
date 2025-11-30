@@ -1,24 +1,40 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/AuthContext.jsx"; // Added .jsx extension
+import axiosInstance from "../utils/axiosInstance.js"; // Added .js extension
 
 export default function Login() {
-  const { login } = useAuth();
+  const { loginEmployee } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const validateEmail = (email) => /\S+@\S+\.\S+/.test(email);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
 
     if (!validateEmail(email)) return setError("Invalid Email Format");
-    if (password.length < 8) return setError("Password must be at least 8 characters");
 
-    login(email);
-    navigate("/dashboard");
+    setLoading(true);
+    try {
+      // Call the backend API
+      const res = await axiosInstance.post("/auth/login", { email, password });
+      
+      // Pass the token and employee data to the login function
+      await loginEmployee({ email, password });
+
+      
+      navigate("/dashboard");
+    } catch (err) {
+      console.error("Login error:", err);
+      setError(err.response?.data?.message || "Failed to login. Please check your credentials.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -28,7 +44,7 @@ export default function Login() {
           Employee Login
         </h2>
 
-        {error && <p className="text-red-600 text-center mb-3">{error}</p>}
+        {error && <p className="text-red-600 text-center mb-3 text-sm">{error}</p>}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
@@ -49,15 +65,18 @@ export default function Login() {
             required
           />
 
-          <button className="w-full bg-[#004D40] text-white py-2 rounded-lg font-semibold hover:bg-[#00332B] transition">
-            Login
+          <button 
+            disabled={loading}
+            className={`w-full bg-[#004D40] text-white py-2 rounded-lg font-semibold transition ${loading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-[#00332B]'}`}
+          >
+            {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
 
         <p className="text-center mt-4 text-sm text-gray-700">
-          New employee?{" "}
-          <Link to="/register" className="text-[#004D40] font-semibold">
-            Create Account
+          Don't have an account?{" "}
+          <Link to="/register" className="text-[#004D40] font-bold hover:underline">
+            Register
           </Link>
         </p>
       </div>

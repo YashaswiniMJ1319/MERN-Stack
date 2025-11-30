@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import axiosInstance from "../utils/axiosInstance.js"; // Added .js extension
 
 export default function Register() {
-  const { register } = useAuth();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -19,6 +19,7 @@ export default function Register() {
   const validate = () => {
     let newErrors = {};
 
+    if (!formData.name.trim()) newErrors.name = "Name is required";
     if (!/\S+@\S+\.\S+/.test(formData.email))
       newErrors.email = "Invalid Email Format";
     if (!/^\d{10}$/.test(formData.phone))
@@ -35,78 +36,118 @@ export default function Register() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validate()) {
-      register(formData.name);
-      navigate("/");
+    if (!validate()) return;
+
+    setLoading(true);
+    try {
+      // Destructure to exclude confirmPassword before sending to API
+      // eslint-disable-next-line no-unused-vars
+      const { confirmPassword, ...apiData } = formData;
+      
+      await axiosInstance.post("/auth/register", apiData);
+      
+      alert("Registration successful! Please log in.");
+      navigate("/login");
+    } catch (err) {
+      console.error("Registration error:", err);
+      const serverMessage = err.response?.data?.message || err.response?.data?.error || "Registration failed. Please try again.";
+      setErrors({ ...errors, api: serverMessage });
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#009688] to-[#00796B]">
-      <div className="bg-white p-10 rounded-2xl shadow-2xl w-96">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#009688] to-[#00796B] p-4">
+      <div className="bg-white p-8 rounded-2xl shadow-xl w-96 border border-gray-200">
         <h2 className="text-3xl font-bold text-center text-[#004D40] mb-6">
-          Create Employee Account
+          Employee Register
         </h2>
 
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <input
-            className="w-full border p-2 rounded-lg"
-            type="text"
-            placeholder="Full Name"
-            required
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          />
+        {errors.api && (
+          <div className="mb-4 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm text-center">
+            {errors.api}
+          </div>
+        )}
 
-          <input
-            className="w-full border p-2 rounded-lg"
-            type="email"
-            placeholder="Email Address"
-            required
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-          />
-          {errors.email && <p className="text-red-600 text-sm">{errors.email}</p>}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <input
+              className="w-full border p-2 rounded-lg focus:outline-none focus:border-[#004D40]"
+              type="text"
+              placeholder="Full Name"
+              required
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            />
+            {errors.name && <p className="text-red-600 text-xs mt-1">{errors.name}</p>}
+          </div>
 
-          <input
-            className="w-full border p-2 rounded-lg"
-            type="tel"
-            placeholder="Phone Number"
-            required
-            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-          />
-          {errors.phone && <p className="text-red-600 text-sm">{errors.phone}</p>}
+          <div>
+            <input
+              className="w-full border p-2 rounded-lg focus:outline-none focus:border-[#004D40]"
+              type="email"
+              placeholder="Email Address"
+              required
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            />
+            {errors.email && <p className="text-red-600 text-xs mt-1">{errors.email}</p>}
+          </div>
 
-          <input
-            className="w-full border p-2 rounded-lg"
-            type="password"
-            placeholder="Password"
-            required
-            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-          />
-          {errors.password && <p className="text-red-600 text-sm">{errors.password}</p>}
+          <div>
+            <input
+              className="w-full border p-2 rounded-lg focus:outline-none focus:border-[#004D40]"
+              type="tel"
+              placeholder="Phone Number"
+              required
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+            />
+            {errors.phone && <p className="text-red-600 text-xs mt-1">{errors.phone}</p>}
+          </div>
 
-          <input
-            className="w-full border p-2 rounded-lg"
-            type="password"
-            placeholder="Confirm Password"
-            required
-            onChange={(e) =>
-              setFormData({ ...formData, confirmPassword: e.target.value })
-            }
-          />
-          {errors.confirmPassword && (
-            <p className="text-red-600 text-sm">{errors.confirmPassword}</p>
-          )}
+          <div>
+            <input
+              className="w-full border p-2 rounded-lg focus:outline-none focus:border-[#004D40]"
+              type="password"
+              placeholder="Password"
+              required
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+            />
+            {errors.password && <p className="text-red-600 text-xs mt-1">{errors.password}</p>}
+          </div>
 
-          <button className="w-full bg-[#004D40] text-white py-2 rounded-lg font-semibold hover:bg-[#00332B] transition">
-            Register
+          <div>
+            <input
+              className="w-full border p-2 rounded-lg focus:outline-none focus:border-[#004D40]"
+              type="password"
+              placeholder="Confirm Password"
+              required
+              value={formData.confirmPassword}
+              onChange={(e) =>
+                setFormData({ ...formData, confirmPassword: e.target.value })
+              }
+            />
+            {errors.confirmPassword && (
+              <p className="text-red-600 text-xs mt-1">{errors.confirmPassword}</p>
+            )}
+          </div>
+
+          <button 
+            disabled={loading}
+            className={`w-full bg-[#004D40] text-white py-2 rounded-lg font-semibold transition ${loading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-[#00332B]'}`}
+          >
+            {loading ? 'Registering...' : 'Register'}
           </button>
         </form>
 
         <p className="text-center mt-4 text-sm text-gray-700">
           Already registered?{" "}
-          <Link to="/" className="text-[#004D40] font-semibold">
+          <Link to="/login" className="text-[#004D40] font-bold hover:underline">
             Login
           </Link>
         </p>

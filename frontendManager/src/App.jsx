@@ -10,6 +10,7 @@ function App() {
       <Routes>
         <Route path="/" element={<ManagerLogin />} />
         <Route path="/register" element={<ManagerRegister />} />
+        <Route path="/login" element={<ManagerLogin />} />
 
         <Route
           path="/dashboard"
