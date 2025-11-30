@@ -2,10 +2,12 @@ import { createContext, useContext, useState } from "react";
 import axiosInstance from "../utils/axiosInstance.js";
 
 const AuthContext = createContext();
-export const useAuth = () => useContext(AuthContext);
 
 export default function AuthProvider({ children }) {
-  const [employee, setEmployee] = useState(null);
+  const [user, setUser] = useState(() => {
+    const savedUser = localStorage.getItem("user");
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
 
   const registerEmployee = async (data) => {
     const res = await axiosInstance.post("/auth/register", data);
@@ -21,6 +23,10 @@ export default function AuthProvider({ children }) {
     return res.data;
   };
 
+  useEffect(() => {
+    if (user) localStorage.setItem("user", JSON.stringify(user));
+  }, [user]);
+
   return (
     <AuthContext.Provider
       value={{
@@ -35,3 +41,5 @@ export default function AuthProvider({ children }) {
     </AuthContext.Provider>
   );
 }
+
+export const useAuth = () => useContext(AuthContext);
