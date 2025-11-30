@@ -1,30 +1,45 @@
 import { db } from "../config/db.js";
 
-// Helper to calculate hours
-const calculateHours = (inISO, outISO) => {
-  const checkIn = new Date(inISO);
-  const checkOut = new Date(outISO);
+/* ---------- Helpers ---------- */
+
+// Convert IST local time string + date back to Date object for hour calculation
+const parseIST = (dateStr, timeStr) => {
+  const [hh, mm, ssPart] = timeStr.split(":");
+  const ss = parseInt(ssPart);
+  const period = timeStr.includes("PM") ? 12 : 0;
+  const hours24 = ((parseInt(hh) % 12) + period) || 0;
+
+  return new Date(`${dateStr}T${String(hours24).padStart(2, "0")}:${mm}:${String(ss).padStart(2, "0")}`);
+};
+
+// Calculate hours based on IST local strings
+const calculateHoursIST = (dateStr, inTime, outTime) => {
+  const checkIn = parseIST(dateStr, inTime);
+  const checkOut = parseIST(dateStr, outTime);
   const diff = (checkOut - checkIn) / (1000 * 60 * 60);
+
   return Math.round(diff * 100) / 100;
 };
 
-// Helper to convert ISO to IST label
-const toIndiaLabel = (iso) => {
-  return new Date(iso).toLocaleTimeString("en-IN", {
+// ✅ Get current IST local time string
+const getISTTimeString = () => {
+  return new Date().toLocaleTimeString("en-IN", {
     timeZone: "Asia/Kolkata",
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
-    hour12: true
+    hour12: true,
   });
 };
 
-// ✅ Check In
+/* ---------- APIs ---------- */
+
+// ✅ Check-In
 export const checkIn = async (req, res) => {
   try {
     const userId = req.user.id;
-    const today = new Date().toISOString().split("T")[0];
-    const nowISO = new Date().toISOString();
+    const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+    const checkInIST = getISTTimeString();
 
     const q = await db.collection("attendance")
       .where("userId", "==", userId)
@@ -32,38 +47,32 @@ export const checkIn = async (req, res) => {
       .limit(1)
       .get();
 
-    if (!q.empty) {
-      return res.status(400).json({ message: "Already checked in for today" });
-    }
+    if (!q.empty) return res.status(400).json({ message: "Already checked in for today" });
 
     const record = {
       userId,
       date: today,
       status: "Present",
-      checkInTime: nowISO,
-      checkInLabel: toIndiaLabel(nowISO),
-      checkOutLabel: null,
+      checkInTime: checkInIST,
       checkOutTime: null,
       hours: 0,
-      createdAt: nowISO
+      createdAt: new Date().toISOString(),
     };
 
-    // Save in Firestore
     await db.collection("attendance").add(record);
-
     return res.json({ message: "Check-in successful", record });
-  } catch (error) {
-    return res.status(500).json({ message: "Check-in failed", error: error.message });
+
+  } catch (err) {
+    return res.status(500).json({ message: "Check-in failed", error: err.message });
   }
 };
 
-// ✅ Check Out
+// ✅ Check-Out
 export const checkOut = async (req, res) => {
   try {
     const userId = req.user.id;
     const today = new Date().toISOString().split("T")[0];
-    const nowISO = new Date().toISOString();
-    const outLabel = toIndiaLabel(nowISO);
+    const checkOutIST = getISTTimeString();
 
     const q = await db.collection("attendance")
       .where("userId", "==", userId)
@@ -71,30 +80,93 @@ export const checkOut = async (req, res) => {
       .limit(1)
       .get();
 
-    if (q.empty) {
-      return res.status(400).json({ message: "You must check in first" });
-    }
+    if (q.empty) return res.status(400).json({ message: "You must check in first" });
 
     const doc = q.docs[0];
-    const data = doc.data();
+    const r = doc.data();
 
-    const hours = calculateHours(data.checkInTime, nowISO);
+    const workedHours = r.checkInTime
+      ? calculateHoursIST(r.date, r.checkInTime, checkOutIST)
+      : 0;
 
-    // Update in Firestore
     await db.collection("attendance").doc(doc.id).update({
-      checkOutLabel: outLabel,
-      checkOutTime: nowISO,
-      hours,
-      updatedAt: nowISO
+      checkOutTime: checkOutIST,
+      hours: workedHours,
     });
 
-    return res.json({ message: "Check-out successful", record: { ...data, checkOutLabel: outLabel, hours } });
-  } catch (error) {
-    return res.status(500).json({ message: "Check-out failed", error: error.message });
+    return res.json({
+      message: "Check-out successful",
+      record: { ...r, checkInTime: r.checkInTime, checkOutTime: checkOutIST, hours: workedHours },
+    });
+
+  } catch (err) {
+    return res.status(500).json({ message: "Check-out failed", error: err.message });
   }
 };
 
-// ✅ Get Today Status
+// ✅ Monthly data including summary (Main API for Report UI)
+export const getMonthlyData = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { month, year } = req.query;
+
+    if (!month || !year) return res.status(400).json({ message: "Month and year required" });
+
+    const m = Number(month);
+    const y = Number(year);
+    const start = `${y}-${String(m).padStart(2, "0")}-01`;
+    const daysInMonth = new Date(y, m, 0).getDate();
+    const end = `${y}-${String(m).padStart(2, "0")}-${daysInMonth}`;
+
+    const snap = await db.collection("attendance")
+      .where("userId", "==", userId)
+      .where("date", ">=", start)
+      .where("date", "<=", end)
+      .orderBy("date", "asc")
+      .get();
+
+    const records = snap.docs.map(d => {
+      const r = d.data();
+      const dayNum = r.date.split("-")[2];
+
+      return {
+        id: d.id,
+        day: Number(dayNum),
+        date: r.date,
+        status: r.status.toLowerCase(),
+        hours: r.hours,
+        checkInTime: r.checkInTime || "-",
+        checkOutTime: r.checkOutTime || "-",
+        meta: r,
+      };
+    });
+
+    // Summary build
+    let present = 0, absent = 0, half = 0, totalHours = 0;
+    snap.docs.forEach(d => {
+      const r = d.data();
+      if (r.status === "Present") present++;
+      if (r.status === "Absent") absent++;
+      if (r.status === "Half Day") half++;
+      totalHours += r.hours || 0;
+    });
+
+    return res.json({
+      records,
+      summary: {
+        present,
+        absent,
+        half,
+        totalHours: Math.round(totalHours * 100) / 100,
+      },
+    });
+
+  } catch (err) {
+    return res.status(500).json({ message: "Failed to load monthly data", error: err.message });
+  }
+};
+
+// ✅ Get Today Status (Aligned for frontend usage)
 export const getTodayStatus = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -111,37 +183,20 @@ export const getTodayStatus = async (req, res) => {
     }
 
     const doc = q.docs[0];
-    const data = doc.data();
+    const r = doc.data();
 
     return res.json({
       checkedIn: true,
-      checkedOut: !!data.checkOutLabel,
+      checkedOut: !!r.checkOutTime,
       record: {
-        date: data.date,
-        status: data.status,
-        checkInLabel: data.checkInLabel,
-        checkOutLabel: data.checkOutLabel,
-        hours: data.hours
-      }
+        date: r.date,
+        status: r.status,
+        checkInTime: r.checkInTime || "-",
+        checkOutTime: r.checkOutTime || "-",
+        hours: r.hours,
+      },
     });
-  } catch (error) {
-    return res.status(500).json({ message: "Failed to fetch status", error: error.message });
-  }
-};
-
-// ✅ Get Attendance History
-export const getAttendanceHistory = async (req, res) => {
-  try {
-    const userId = req.user.id;
-
-    const snap = await db.collection("attendance")
-      .where("userId", "==", userId)
-      .orderBy("createdAt", "desc")
-      .get();
-
-    const history = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    return res.json(history);
-  } catch (error) {
-    return res.status(500).json({ message: "Failed to fetch attendance history", error: error.message });
+  } catch (err) {
+    return res.status(500).json({ message: "Failed to fetch today status", error: err.message });
   }
 };

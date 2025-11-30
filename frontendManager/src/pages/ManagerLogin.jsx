@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import axios from "axios";  // ⭐ Added
 
 export default function ManagerLogin() {
   const navigate = useNavigate();
@@ -7,17 +8,23 @@ export default function ManagerLogin() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const savedUser = JSON.parse(localStorage.getItem("managerUser"));
+    try {
+      const res = await axios.post("http://localhost:5000/manager/login", {
+        username,
+        password,
+      });
 
-    if (!savedUser || savedUser.username !== username || savedUser.password !== password) {
-      return setError("Invalid username or password");
+      // Save token to localStorage for protected routes
+      localStorage.setItem("managerToken", res.data.token);
+
+      navigate("/dashboard");
+
+    } catch (err) {
+      setError(err.response?.data?.message || "Invalid username or password");
     }
-
-    localStorage.setItem("managerAuth", true);
-    navigate("/dashboard");
   };
 
   return (

@@ -9,13 +9,15 @@ export default function ManagerSidebar() {
 
   const menu = [
     { name: "Dashboard", icon: <FiHome />, path: "/dashboard" },
-    { name: "Employees Attendance", icon: <FiUsers />, path: "/attendance" },
+    { name: "Employee List", icon: <FiUsers />, path: "/employees" },
     { name: "Attendance", icon: <FiCalendar />, path: "/attendance-report" },
-    { name: "Reports", icon: <FiFileText />, path: "/reports" },
+    { name: "Team Summary", icon: <FiCalendar />, path: "/summary" },
+
   ];
 
   const logout = () => {
-    localStorage.removeItem("managerAuth");
+    localStorage.removeItem("managerToken");
+
     navigate("/");
   };
 

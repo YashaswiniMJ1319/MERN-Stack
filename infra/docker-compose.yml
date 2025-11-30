@@ -1,11 +1,4 @@
 services:
-  mongo:
-    image: mongo:6.0
-    container_name: attendance_db
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
 
   api:
     build:
@@ -17,8 +10,6 @@ services:
     environment:
       - MONGO_URI=mongodb://mongo:27017/attendance_db
       - PORT=5000
-    depends_on:
-      - mongo
     volumes:
       - ../api:/app
       - /app/node_modules
@@ -48,5 +39,4 @@ services:
       - ../frontendManager:/app
       - /app/node_modules
 
-volumes:
-  mongo_data:
+

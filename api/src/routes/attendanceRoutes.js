@@ -1,13 +1,21 @@
+// routes/attendanceRoutes.js
 import express from "express";
-import { checkIn, checkOut, getTodayStatus, getAttendanceHistory } from "../controllers/attendanceController.js";
+import {
+  checkIn,
+  checkOut,
+  getTodayStatus,
+  getMonthlyData
+} from "../controllers/attendanceController.js";
 import { protectRoute } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
-// All routes here require login
 router.get("/today-status", protectRoute, getTodayStatus);
-router.get("/history", protectRoute, getAttendanceHistory);
 router.post("/checkin", protectRoute, checkIn);
 router.post("/checkout", protectRoute, checkOut);
+
+// ✅ Necessary routes for report page
+
+router.get("/month-data", protectRoute, getMonthlyData);
 
 export default router;

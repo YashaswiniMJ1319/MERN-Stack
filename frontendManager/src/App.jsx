@@ -5,6 +5,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import ManagerDashboard from "./pages/ManagerDashboard";
 import EmployeeList from "./pages/EmployeeList";
 import EmployeeAttendance from "./pages/EmployeeAttendance";
+import TeamSummary from "./pages/TeamSummary"; // <-- ADD THIS
 
 function App() {
   return (
@@ -39,6 +40,16 @@ function App() {
           element={
             <ProtectedRoute>
               <EmployeeAttendance />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ---- ADD THIS ROUTE ---- */}
+        <Route
+          path="/summary"
+          element={
+            <ProtectedRoute>
+              <TeamSummary />
             </ProtectedRoute>
           }
         />

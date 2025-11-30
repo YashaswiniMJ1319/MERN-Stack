@@ -1,7 +1,36 @@
+import { useEffect, useState } from "react";
+import axios from "axios";
 import ManagerSidebar from "../components/ManagerSidebar";
 import ManagerTopbar from "../components/ManagerTopbar";
 
 export default function ManagerDashboard() {
+  const [stats, setStats] = useState({
+    total: 0,
+    present: 0,
+    absent: 0,
+    late: 0
+  });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const token = localStorage.getItem("managerToken");
+
+        const res = await axios.get("http://localhost:5000/manager/dashboard", {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+
+        setStats(res.data);
+      } catch (err) {
+        console.log("Error fetching dashboard stats", err);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
   return (
     <div className="flex bg-gray-100 h-screen">
       <ManagerSidebar />
@@ -10,33 +39,41 @@ export default function ManagerDashboard() {
         <ManagerTopbar />
 
         <div className="p-6 space-y-6 overflow-y-auto">
+
           {/* Stats Cards */}
           <div className="grid grid-cols-4 gap-6">
             <div className="bg-white shadow-md p-6 rounded-xl border-l-4 border-[#1A237E]">
               <h3 className="text-lg font-semibold">Total Employees</h3>
-              <p className="text-3xl font-bold mt-2 text-[#1A237E]">45</p>
+              <p className="text-3xl font-bold mt-2 text-[#1A237E]">
+                {stats.total}
+              </p>
             </div>
 
             <div className="bg-white shadow-md p-6 rounded-xl border-l-4 border-green-600">
               <h3 className="text-lg font-semibold">Present Today</h3>
-              <p className="text-3xl font-bold mt-2 text-green-600">38</p>
+              <p className="text-3xl font-bold mt-2 text-green-600">
+                {stats.present}
+              </p>
             </div>
 
             <div className="bg-white shadow-md p-6 rounded-xl border-l-4 border-red-600">
               <h3 className="text-lg font-semibold">Absent Today</h3>
-              <p className="text-3xl font-bold mt-2 text-red-600">7</p>
+              <p className="text-3xl font-bold mt-2 text-red-600">
+                {stats.absent}
+              </p>
             </div>
 
             <div className="bg-white shadow-md p-6 rounded-xl border-l-4 border-yellow-500">
               <h3 className="text-lg font-semibold">Late Arrivals</h3>
-              <p className="text-3xl font-bold mt-2 text-yellow-600">3</p>
+              <p className="text-3xl font-bold mt-2 text-yellow-600">
+                {stats.late}
+              </p>
             </div>
           </div>
 
           {/* Recent Attendance Table */}
           <div className="bg-white p-6 rounded-xl shadow-md">
             <h3 className="text-xl font-bold mb-4">Today’s Attendance</h3>
-
             <table className="w-full">
               <thead>
                 <tr className="bg-[#1A237E] text-white">
@@ -56,6 +93,7 @@ export default function ManagerDashboard() {
               </tbody>
             </table>
           </div>
+
         </div>
       </div>
     </div>

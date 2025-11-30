@@ -1,35 +1,51 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { CSVLink } from "react-csv";
 
-const dummyAttendance = [
-  { id: 1, name: "Yashwanth", date: "2024-11-01", status: "Present", department: "IT" },
-  { id: 2, name: "Suresh", date: "2024-11-01", status: "Absent", department: "HR" },
-  { id: 3, name: "Ram", date: "2024-11-01", status: "Present", department: "Finance" },
-  { id: 4, name: "Harsha", date: "2024-11-02", status: "Leave", department: "IT" },
-];
-
 export default function EmployeeList() {
-  const [data, setData] = useState(dummyAttendance);
+  const [data, setData] = useState([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [departmentFilter, setDepartmentFilter] = useState("");
+
+  // Fetch Data from Backend
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem("managerToken");
+
+        const res = await axios.get("http://localhost:5000/manager/employee-list", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        setData(res.data);
+      } catch (error) {
+        console.log("Error fetching employee list:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const filteredData = data.filter((record) => {
-    const matchesName = record.name.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter ? record.status === statusFilter : true;
-    return matchesName && matchesStatus;
+    const nameMatch = record.name.toLowerCase().includes(search.toLowerCase());
+    const statusMatch = statusFilter ? record.status === statusFilter : true;
+    const departmentMatch = departmentFilter ? record.department === departmentFilter : true;
+    return nameMatch && statusMatch && departmentMatch;
   });
 
   const total = data.length;
-  const present = data.filter(d => d.status === "Present").length;
-  const absent = data.filter(d => d.status === "Absent").length;
-  const leave = data.filter(d => d.status === "Leave").length;
+  const present = data.filter((d) => d.status === "Present").length;
+  const absent = data.filter((d) => d.status === "Absent").length;
+  const leave = data.filter((d) => d.status === "Leave").length;
 
   return (
     <div className="p-6">
-
       <h1 className="text-3xl font-bold text-[#004D40] mb-6">Employee Attendance</h1>
 
-      {/* Summary Dashboard */}
+      {/* Dashboard Summary Cards */}
       <div className="grid grid-cols-3 gap-4 mb-6">
         <div className="bg-white p-4 shadow rounded-xl text-center">
           <h2 className="font-medium text-lg">Total Records</h2>
@@ -59,14 +75,18 @@ export default function EmployeeList() {
           onChange={(e) => setSearch(e.target.value)}
         />
 
-        <select
-          className="border p-2 rounded"
-          onChange={(e) => setStatusFilter(e.target.value)}
-        >
+        <select className="border p-2 rounded" onChange={(e) => setStatusFilter(e.target.value)}>
           <option value="">Filter by Status</option>
           <option value="Present">Present</option>
           <option value="Absent">Absent</option>
           <option value="Leave">Leave</option>
+        </select>
+
+        <select className="border p-2 rounded" onChange={(e) => setDepartmentFilter(e.target.value)}>
+          <option value="">Filter by Department</option>
+          <option value="IT">IT</option>
+          <option value="HR">HR</option>
+          <option value="Finance">Finance</option>
         </select>
 
         <CSVLink
@@ -102,7 +122,6 @@ export default function EmployeeList() {
           ))}
         </tbody>
       </table>
-
     </div>
   );
 }

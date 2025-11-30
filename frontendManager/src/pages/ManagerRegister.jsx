@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import axios from "axios"; // ⭐ Added
 
 export default function ManagerRegister() {
   const navigate = useNavigate();
@@ -8,16 +9,23 @@ export default function ManagerRegister() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (password !== confirmPassword)
       return setError("Passwords do not match");
 
-    localStorage.setItem("managerUser", JSON.stringify({ username, password }));
-    alert("Registration Success");
+    try {
+      await axios.post("http://localhost:5000/manager/register", {
+        username,
+        password
+      });
 
-    navigate("/");
+      alert("Registration Success");
+      navigate("/");
+    } catch (err) {
+      setError(err.response?.data?.message || "Registration Failed");
+    }
   };
 
   return (

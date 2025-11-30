@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from "../context/AuthContext.jsx"; // Added .jsx extension
-import axiosInstance from "../utils/axiosInstance.js"; // Added .js extension
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext.jsx";
 
 export default function Login() {
   const { loginEmployee } = useAuth();
   const navigate = useNavigate();
-  const [username, setUsername] = useState("");
+
+  const [email, setEmail] = useState("");  // ✅ email state added
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -17,17 +17,12 @@ export default function Login() {
     e.preventDefault();
     setError("");
 
-    if (!validateEmail(email)) return setError("Invalid Email Format");
+    if (!validateEmail(email)) return setError("Invalid Email Format"); // ✅ email exists now
 
     setLoading(true);
     try {
-      // Call the backend API
-      const res = await axiosInstance.post("/auth/login", { email, password });
-      
-      // Pass the token and employee data to the login function
-      await loginEmployee({ email, password });
-
-      
+      // Send credentials to AuthContext login
+      await loginEmployee({ email, password }); // ✅ no undefined email anymore
       navigate("/dashboard");
     } catch (err) {
       console.error("Login error:", err);
@@ -47,15 +42,18 @@ export default function Login() {
         {error && <p className="text-red-600 text-center mb-3 text-sm">{error}</p>}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+
+          {/* ✅ Email input mapped correctly */}
           <input
-            type="text"
-            placeholder="Enter Username"
+            type="email"
+            placeholder="Enter Email"
             className="w-full px-3 py-2 border rounded-lg border-gray-300 focus:outline-none focus:border-[#004D40]"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             required
           />
 
+          {/* ✅ Password stays same */}
           <input
             type="password"
             placeholder="Enter Password"
@@ -71,14 +69,8 @@ export default function Login() {
           >
             {loading ? 'Logging in...' : 'Login'}
           </button>
-        </form>
 
-        <p className="text-center mt-4 text-sm text-gray-700">
-          Don't have an account?{" "}
-          <Link to="/register" className="text-[#004D40] font-bold hover:underline">
-            Register
-          </Link>
-        </p>
+        </form>
       </div>
     </div>
   );
