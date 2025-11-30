@@ -200,3 +200,47 @@ export const getTodayStatus = async (req, res) => {
     return res.status(500).json({ message: "Failed to fetch today status", error: err.message });
   }
 };
+
+export const getDashboardStats = async (req, res) => {
+  try {
+    const snap = await db.collection("attendance").get();
+    const records = snap.docs.map(doc => doc.data());
+
+    const today = new Date().toISOString().slice(0,10);
+
+    const todayRecords = records.filter(r => r.date === today);
+    const present = todayRecords.filter(x => x.status === "Present").length;
+    const absent = todayRecords.filter(x => x.status === "Absent").length;
+    const late = todayRecords.filter(x => x.status === "Late").length;
+
+    res.json({ total: records.length, present, absent, late });
+  } catch (err) {
+    res.status(500).json({ message: "Failed", error: err.message });
+  }
+};
+
+export const getAttendance = async (req, res) => {
+  try {
+    const { name, status, date } = req.query;
+    const snap = await db.collection("attendance").get();
+    let data = snap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+
+    if (name) data = data.filter(a => a.name.toLowerCase().includes(name.toLowerCase()));
+    if (status) data = data.filter(a => a.status === status);
+    if (date) data = data.filter(a => a.date === date);
+
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ message: "Error", error: err.message });
+  }
+};
+
+export const teamSummary = async (req, res) => {
+  try {
+    const snap = await db.collection("teams").get();
+    const summary = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    res.json(summary);
+  } catch (err) {
+    res.status(500).json({ message: "Failed", error: err.message });
+  }
+};

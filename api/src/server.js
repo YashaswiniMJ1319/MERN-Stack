@@ -3,7 +3,7 @@ import cors from "cors";
 import authRoutes from "./routes/authRoutes.js";
 import attendanceRoutes from "./routes/attendanceRoutes.js";
 import leaveRoutes from "./routes/leaveRoutes.js";
-import managerAuthRoutes from "./routes/managerAuthRoutes.js";
+import managerAuthRoutes from "./routes/managerRoutes.js";
 import dotenv from "dotenv";
 
 dotenv.config();
