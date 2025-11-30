@@ -5,19 +5,17 @@ import { useAuth } from "../context/AuthContext";
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-
-  const validateEmail = (email) => /\S+@\S+\.\S+/.test(email);
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (!validateEmail(email)) return setError("Invalid Email Format");
+    if (username.trim() === "") return setError("Username is required");
     if (password.length < 8) return setError("Password must be at least 8 characters");
 
-    login(email);
+    login(username);
     navigate("/dashboard");
   };
 
@@ -32,11 +30,11 @@ export default function Login() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
-            type="email"
-            placeholder="Enter Email"
+            type="text"
+            placeholder="Enter Username"
             className="w-full px-3 py-2 border rounded-lg border-gray-300 focus:outline-none focus:border-[#004D40]"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
             required
           />
 

@@ -1,27 +1,41 @@
-import { createContext, useContext, useState } from "react";
-import axios from "axios";
+import { createContext, useContext, useState, useEffect } from "react";
 
 const AuthContext = createContext();
-export const useAuth = () => useContext(AuthContext);
 
 export default function AuthProvider({ children }) {
-  const [employee, setEmployee] = useState(null);
+  const [user, setUser] = useState(() => {
+    const savedUser = localStorage.getItem("user");
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
 
-  const registerEmployee = async (data) => {
-    const res = await axios.post("http://localhost:5000/api/auth/register", data);
-    return res.data;
+  const login = (username) => {
+    const fakeUser = {
+      name: username,
+      empId: "emp112",
+      dob: "09/4/2024",
+      gender: "Male",
+      department: "IT",
+      maritalStatus: "Single",
+    };
+
+    setUser(fakeUser);
+    localStorage.setItem("user", JSON.stringify(fakeUser));
   };
 
-  const loginEmployee = async (data) => {
-    const res = await axios.post("http://localhost:5000/api/auth/login", data);
-    localStorage.setItem("token", res.data.token);
-    setEmployee(res.data.employee);
-    return res.data;
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem("user");
   };
+
+  useEffect(() => {
+    if (user) localStorage.setItem("user", JSON.stringify(user));
+  }, [user]);
 
   return (
-    <AuthContext.Provider value={{ employee, registerEmployee, loginEmployee }}>
+    <AuthContext.Provider value={{ user, setUser, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
 }
+
+export const useAuth = () => useContext(AuthContext);

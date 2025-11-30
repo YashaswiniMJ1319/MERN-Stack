@@ -9,7 +9,7 @@ export default function ManagerSidebar() {
 
   const menu = [
     { name: "Dashboard", icon: <FiHome />, path: "/dashboard" },
-    { name: "Employees", icon: <FiUsers />, path: "/employees" },
+    { name: "Employees Attendance", icon: <FiUsers />, path: "/attendance" },
     { name: "Attendance", icon: <FiCalendar />, path: "/attendance-report" },
     { name: "Reports", icon: <FiFileText />, path: "/reports" },
   ];

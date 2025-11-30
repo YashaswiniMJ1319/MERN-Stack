@@ -7,7 +7,6 @@ export default function Sidebar({ activePage, setActivePage }) {
   const menu = [
     { name: "Dashboard", key: "dashboard", icon: <FiHome /> },
     { name: "Profile", key: "profile", icon: <FiUsers /> },
-    { name: "Departments", key: "departments", icon: <FiLayers /> },
     { name: "Leaves", key: "leaves", icon: <FiCalendar /> },
     { name: "Attendance", key: "attendance", icon: <FiClock /> },
     { name: "Attendance Report", key: "attendance-report", icon: <FiBarChart /> },
